@@ -1,0 +1,35 @@
+
+tmp/
+tmp.*
+.vscode
+.vim*
+input*.txt
+Cargo.*
+
+# Language specific
+compile_flags.txt
+.Rhistory
+package*.json
+node_modules/
+tsconfig.json
+rust-project.json
+
+# Compiled files
+part1
+part2
+*.out
+*.o
+*.hi
+*.class
+*.tasty
+*.exe
+*.cmi
+*.cmo
+*.wasm
+obj_dir
+
+
+
+# Added by cargo
+
+/target
