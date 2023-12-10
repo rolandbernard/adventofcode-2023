@@ -67,17 +67,14 @@ fn main() {
     }
     let mut count = 0;
     for i in 0..map.len() {
+        let mut inside = false;
         for j in 0..map[i].len() {
             if !pipe[i][j] {
-                let mut inside = false;
-                for k in 1..=i {
-                    if pipe[i - k][j] && ['-', 'F', 'L'].contains(&map[i - k][j]) {
-                        inside = !inside;
-                    }
-                }
                 if inside {
                     count += 1;
                 }
+            } else if ['|', 'F', '7'].contains(&map[i][j]) {
+                inside = !inside;
             }
         }
     }
