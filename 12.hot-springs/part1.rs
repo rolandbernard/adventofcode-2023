@@ -1,32 +1,4 @@
-fn count_options(line: &[char], runs: &[i32], lpos: usize, rpos: usize, crun: i32) -> i64 {
-    if line.len() == lpos {
-        if (rpos == runs.len() && crun == 0) || (rpos == runs.len() - 1 && runs[rpos] == crun) {
-            1
-        } else {
-            0
-        }
-    } else {
-        let char = line[lpos];
-        let mut res = 0;
-        if char == '.' || char == '?' {
-            if crun == 0 || (rpos < runs.len() && runs[rpos] == crun) {
-                res += count_options(
-                    line,
-                    runs,
-                    lpos + 1,
-                    if crun == 0 { rpos } else { rpos + 1 },
-                    0,
-                );
-            }
-        }
-        if char == '#' || char == '?' {
-            if rpos < runs.len() && crun < runs[rpos] {
-                res += count_options(line, runs, lpos + 1, rpos, crun + 1);
-            }
-        }
-        res
-    }
-}
+mod common;
 
 fn main() {
     let mut sum = 0;
@@ -38,7 +10,7 @@ fn main() {
             .split(',')
             .map(|x| x.parse::<i32>().unwrap())
             .collect::<Vec<_>>();
-        let options = count_options(&chars, &runs, 0, 0, 0);
+        let options = common::count_options(&chars, &runs);
         sum += options;
     }
     println!("Result: {}", sum);
