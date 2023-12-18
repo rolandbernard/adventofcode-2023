@@ -1,3 +1,5 @@
+mod common;
+
 fn main() {
     let mut points = Vec::new();
     let (mut x, mut y) = (0, 0);
@@ -17,11 +19,5 @@ fn main() {
         (x, y) = (x + len * dx, y + len * dy);
         points.push((x, y));
     }
-    let mut count0 = 0;
-    let mut count1 = 0;
-    for (&(x0, y0), &(x1, y1)) in points.iter().zip(points.iter().skip(1)) {
-        count0 += (x0 * y1) - (x1 * y0);
-        count1 += (x1 - x0).abs() + (y1 - y0).abs();
-    }
-    println!("Result: {}", count0.abs() / 2 + count1 / 2 + 1);
+    println!("Result: {}", common::area_from_points(points));
 }
