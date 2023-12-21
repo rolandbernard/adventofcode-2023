@@ -1,6 +1,7 @@
 
 tmp/
 tmp.*
+tmp*
 .vscode
 .vim*
 input*.txt
