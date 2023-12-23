@@ -1,24 +1,9 @@
 use std::collections::VecDeque;
 
+mod common;
+
 fn main() {
-    let mut map = Vec::new();
-    for line in std::io::stdin().lines() {
-        let line = line.unwrap();
-        map.push(line.chars().collect::<Vec<_>>());
-    }
-    let start;
-    'start_search: {
-        for (i, line) in map.iter_mut().enumerate() {
-            for (j, cell) in line.iter_mut().enumerate() {
-                if *cell == 'S' {
-                    *cell = '.';
-                    start = (i as i64, j as i64);
-                    break 'start_search;
-                }
-            }
-        }
-        unreachable!("no start location found");
-    }
+    let (map, start) = common::read_input();
     let mut reachable = vec![vec![[false; 2]; map[0].len()]; map.len()];
     reachable[start.0 as usize][start.1 as usize][0] = true;
     let mut queue = VecDeque::new();
