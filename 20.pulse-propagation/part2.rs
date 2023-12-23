@@ -1,21 +1,6 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    io::Read,
-};
+use std::{collections::HashMap, io::Read};
 
-enum Module<'a> {
-    Broadcast {
-        next: Vec<&'a str>,
-    },
-    FlipFlop {
-        state: bool,
-        next: Vec<&'a str>,
-    },
-    Conjunction {
-        state: HashMap<&'a str, bool>,
-        next: Vec<&'a str>,
-    },
-}
+mod common;
 
 fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64, i64, i64) {
     let (mut old_r, mut r) = (a, b);
@@ -51,84 +36,24 @@ fn lcm(a: i64, b: i64) -> i64 {
 fn main() {
     let mut input = String::new();
     std::io::stdin().lock().read_to_string(&mut input).unwrap();
-    let mut network = HashMap::new();
-    let mut reverse = HashMap::new();
-    for line in input.lines() {
-        let (name, outputs) = line.split_once(" -> ").unwrap();
-        let targets = outputs.split(", ").collect::<Vec<_>>();
-        let real_name;
-        if name.starts_with('%') {
-            real_name = &name[1..];
-            network.insert(
-                real_name,
-                Module::FlipFlop {
-                    state: false,
-                    next: targets,
-                },
-            );
-        } else if name.starts_with('&') {
-            real_name = &name[1..];
-            network.insert(
-                real_name,
-                Module::Conjunction {
-                    state: HashMap::new(),
-                    next: targets,
-                },
-            );
-        } else {
-            real_name = name;
-            network.insert(name, Module::Broadcast { next: targets });
-        }
-        for target in outputs.split(", ") {
-            reverse.entry(target).or_insert(Vec::new()).push(real_name);
-        }
-    }
-    for (name, module) in &mut network {
-        if let Module::Conjunction { state, .. } = module {
-            state.extend(reverse[name].iter().map(|&x| (x, false)));
-        }
-    }
+    let (mut network, reverse) = common::parse_input(&input);
+    let prev = &reverse["rx"];
+    let specials = &reverse[prev[0]];
     let mut last_special = HashMap::new();
-    for press in 1..10_000 {
-        let mut queue = VecDeque::new();
-        queue.push_back(("button", "broadcaster", false));
-        while let Some((from, to, high)) = queue.pop_front() {
-            for special in ["kd", "zf", "vg", "gs"] {
-                if !high && to == special {
-                    if let Some((last, _)) = last_special.get(special) {
-                        last_special.insert(special, (press, press - last));
+    for press in 1.. {
+        if common::evaluate_press(&mut network, |_, to, high| {
+            if !high {
+                if let Some(to) = specials.iter().find(|&&e| e == to) {
+                    if let Some((last, _)) = last_special.get(to) {
+                        last_special.insert(to, (press, press - last));
                     } else {
-                        last_special.insert(special, (press, 0));
+                        last_special.insert(to, (press, 0));
                     }
                 }
             }
-            if !high && to == "rx" {
-                println!("Result: {press}");
-            }
-            if let Some(target) = network.get_mut(to) {
-                match target {
-                    Module::Broadcast { next } => {
-                        for target in next {
-                            queue.push_back((to, target, high));
-                        }
-                    }
-                    Module::FlipFlop { state, next } => {
-                        if !high {
-                            *state = !*state;
-                            for target in next {
-                                queue.push_back((to, target, *state));
-                            }
-                        }
-                    }
-                    Module::Conjunction { state, next } => {
-                        *state.get_mut(from).unwrap() = high;
-                        let signal = !state.values().all(|x| *x);
-                        for target in next {
-                            queue.push_back((to, target, signal));
-                        }
-                    }
-                }
-            }
+            last_special.len() == specials.len() && last_special.values().all(|x| x.1 != 0)
+        }) {
+            break;
         }
     }
     let mut step = 0;
