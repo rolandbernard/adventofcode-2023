@@ -1,40 +1,54 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
-fn min_cut(network: &Vec<HashSet<usize>>) -> (usize, Vec<usize>) {
-    let mut mat = vec![vec![0; network.len()]; network.len()];
+fn min_cut(network: &[Vec<usize>]) -> (usize, usize) {
+    let mut weighted = vec![HashMap::new(); network.len()];
     for i in 0..network.len() {
-        for &j in &network[i] {
-            mat[i][j] = 1;
+        for &next in &network[i] {
+            weighted[i].insert(next, 1);
         }
     }
-    let mut best = (usize::MAX, Vec::new());
-    let mut merged = (0..mat.len()).map(|e| vec![e]).collect::<Vec<_>>();
-    let mut remaining = (0..mat.len()).collect::<HashSet<_>>();
-    for _ in 1..mat.len() {
-        let mut unmerged = remaining.clone();
-        unmerged.remove(&0);
-        let mut w = mat[0].clone();
-        let mut s = 0;
-        let mut t = 0;
-        for _ in 0..unmerged.len() {
+    let mut best = (usize::MAX, 0);
+    let mut merge_count = vec![1; weighted.len()];
+    let mut remaining = (0..weighted.len()).collect::<HashSet<_>>();
+    for _ in 1..weighted.len() {
+        let mut s = *remaining.iter().next().unwrap();
+        let mut t = s;
+        let mut w = weighted[t].clone();
+        let mut merged = HashSet::from([t]);
+        let mut w_sorted = BinaryHeap::new();
+        for (&next, &c) in &w {
+            w_sorted.push((c, next));
+        }
+        for _ in 1..remaining.len() {
+            w.remove(&t);
             s = t;
-            t = unmerged.iter().cloned().max_by_key(|&i| w[i]).unwrap();
-            unmerged.remove(&t);
-            for i in 0..mat.len() {
-                w[i] += mat[t][i];
+            t = w_sorted.pop().unwrap().1;
+            while merged.contains(&t) {
+                t = w_sorted.pop().unwrap().1;
+            }
+            merged.insert(t);
+            for (&n, &c) in &weighted[t] {
+                if !merged.contains(&n) {
+                    *w.entry(n).or_insert(0) += c;
+                    w_sorted.push((w[&n], n));
+                }
             }
         }
-        let cur = (w[t] - mat[t][t], merged[t].clone());
-        best = best.min(cur);
-        let cot_copy = merged[t].clone();
-        merged[s].extend(cot_copy);
-        for i in 0..mat.len() {
-            mat[s][i] += mat[t][i];
-        }
-        for i in 0..mat.len() {
-            mat[i][s] = mat[s][i];
-        }
+        best = best.min((w[&t], merge_count[t]));
+        merge_count[s] += merge_count[t];
         remaining.remove(&t);
+        for &i in &remaining {
+            if let Some(&w) = weighted[i].get(&t) {
+                *weighted[i].entry(s).or_insert(0) += w;
+                weighted[i].remove(&t);
+            }
+        }
+        for &i in &remaining {
+            if let Some(&w) = weighted[t].get(&i) {
+                *weighted[s].entry(i).or_insert(0) += w;
+            }
+        }
+        weighted[s].remove(&s);
     }
     return best;
 }
@@ -53,12 +67,12 @@ fn main() {
             links.push((id, next_id));
         }
     }
-    let mut network = vec![HashSet::new(); names.len()];
+    let mut network = vec![Vec::new(); names.len()];
     for &(from, to) in &links {
-        network[from].insert(to);
-        network[to].insert(from);
+        network[from].push(to);
+        network[to].push(from);
     }
     let (num, merged) = min_cut(&network);
     assert_eq!(num, 3);
-    println!("Result: {}", merged.len() * (network.len() - merged.len()));
+    println!("Result: {}", merged * (network.len() - merged));
 }
